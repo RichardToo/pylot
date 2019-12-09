@@ -106,6 +106,7 @@ class CarlaOperator(Op):
             CarlaOperator.on_control_msg)
         ground_agent_streams = [
             pylot.utils.create_can_bus_stream(),
+            pylot.utils.create_past_control_stream(),
             pylot.utils.create_ground_traffic_lights_stream(),
             pylot.utils.create_ground_vehicles_stream(),
             pylot.utils.create_ground_pedestrians_stream(),
@@ -354,6 +355,15 @@ class CarlaOperator(Op):
         self.get_output_stream('can_bus').send(
             Message(can_bus, timestamp))
         self.get_output_stream('can_bus').send(watermark_msg)
+
+        control = self._driving_vehicle.get_control()
+        steer = control.steer
+        throttle = control.throttle
+        brake = control.brake
+        control_msg = pylot.simulation.utils.Control(steer, throttle, brake)
+        self.get_output_stream('past_control_stream').send(
+            Message(control_msg, timestamp))
+        self.get_output_stream('past_control_stream').send(watermark_msg)
 
         # Set the world simulation view with respect to the vehicle.
         v_pose = self._driving_vehicle.get_transform()
