@@ -103,7 +103,7 @@ class RRTStarPlanningOperator(Op):
         index = 0
         for waypoint in self._waypoints:
             # XXX(ionel): We only check the first 10 waypoints.
-            if index > 30:
+            if index > 10:
                 break
             dist = pylot.planning.utils.get_distance(waypoint.location,
                                 vehicle_transform.location)
@@ -154,6 +154,10 @@ class RRTStarPlanningOperator(Op):
             self._ego_id = closest_id
         prediction_msg.predictions = [pred for pred in prediction_msg.predictions if pred.id != self._ego_id]
         obstacle_map = self._build_obstacle_map(vehicle_transform, prediction_msg)
+        if obstacle_map == {}:
+            self._wp_index = 9
+        else:
+            self._wp_index = 19
 
         # compute goals
         target_location = self._compute_target_location(vehicle_transform)
