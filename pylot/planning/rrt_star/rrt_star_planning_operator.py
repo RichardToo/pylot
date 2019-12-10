@@ -12,6 +12,7 @@ Planner steps:
 import collections
 import itertools
 import threading
+import numpy as np
 
 from collections import deque
 from erdos.op import Op
@@ -30,12 +31,12 @@ from pylot.planning.utils import get_waypoint_vector_and_angle
 from pylot.utils import is_within_distance_ahead
 
 
-DEFAULT_OBSTACLE_LENGTH = 3  # 3 meters from front to back
-DEFAULT_OBSTACLE_WIDTH = 2  # 2 meters from side to side
+DEFAULT_OBSTACLE_LENGTH = 5  # 3 meters from front to back
+DEFAULT_OBSTACLE_WIDTH = 6  # 2 meters from side to side
 DEFAULT_TARGET_LENGTH = 1  # 1.5 meters from front to back
 DEFAULT_TARGET_WIDTH = 1  # 1 meters from side to side
 DEFAULT_DISTANCE_THRESHOLD = 20  # 20 meters ahead of ego
-DEFAULT_NUM_WAYPOINTS = 50  # 50 waypoints to plan for
+DEFAULT_NUM_WAYPOINTS = 200  # 50 waypoints to plan for
 
 
 class RRTStarPlanningOperator(Op):
@@ -67,7 +68,7 @@ class RRTStarPlanningOperator(Op):
         self._csv_logger = setup_csv_logging(self.name + '-csv', csv_file_name)
         self._flags = flags
 
-        self._wp_index = 9
+        self._wp_index = 19
         self._waypoints = None
         self._carla_map = get_map(self._flags.carla_host,
                                   self._flags.carla_port,
@@ -77,7 +78,7 @@ class RRTStarPlanningOperator(Op):
 
         self._can_bus_msgs = deque()
         self._prediction_msgs = deque()
-
+        self._ego_id = None
         self._lock = threading.Lock()
 
     @staticmethod
@@ -89,6 +90,36 @@ class RRTStarPlanningOperator(Op):
         input_streams.add_completion_callback(
             RRTStarPlanningOperator.on_notification)
         return [pylot.utils.create_waypoints_stream()]
+
+    def __remove_completed_waypoints(self, vehicle_transform):
+        """ Removes waypoints that the ego vehicle has already completed.
+
+        The method first finds the closest waypoint, removes all waypoints
+        that are before the closest waypoint, and finally removes the
+        closest waypoint if the ego vehicle is very close to it
+        (i.e., close to completion)."""
+        min_dist = 10000000
+        min_index = 0
+        index = 0
+        for waypoint in self._waypoints:
+            # XXX(ionel): We only check the first 10 waypoints.
+            if index > 30:
+                break
+            dist = pylot.planning.utils.get_distance(waypoint.location,
+                                vehicle_transform.location)
+            if dist < min_dist:
+                min_dist = dist
+                min_index = index
+
+        # Remove waypoints that are before the closest waypoint. The ego
+        # vehicle already completed them.
+        while min_index > 0:
+            self._waypoints.popleft()
+            min_index -= 1
+
+        # The closest waypoint is almost complete, remove it.
+        if min_dist < 5:
+            self._waypoints.popleft()
 
     def on_can_bus_update(self, msg):
         with self._lock:
@@ -102,9 +133,27 @@ class RRTStarPlanningOperator(Op):
         # get ego info
         can_bus_msg = self._can_bus_msgs.popleft()
         vehicle_transform = can_bus_msg.data.transform
-
+        if not self._waypoints:
+            self._waypoints = self._hd_map.compute_waypoints(
+                vehicle_transform.location.as_carla_location(),
+                self._goal_location
+            )
+        self.__remove_completed_waypoints(vehicle_transform)
+        self._logger.info(len(self._waypoints))
         # get obstacles
-        obstacle_map = self._build_obstacle_map(vehicle_transform)
+        prediction_msg = self._prediction_msgs.popleft()
+        # HACK: remove ego from predictions
+        if not self._ego_id:
+            closest_id = None
+            min_dist = np.inf
+            for prediction in prediction_msg.predictions:
+                location = prediction.trajectory[0]
+                if np.linalg.norm([location.x, location.y]) < min_dist:
+                    min_dist = np.linalg.norm([location.x, location.y])
+                    closest_id = prediction.id
+            self._ego_id = closest_id
+        prediction_msg.predictions = [pred for pred in prediction_msg.predictions if pred.id != self._ego_id]
+        obstacle_map = self._build_obstacle_map(vehicle_transform, prediction_msg)
 
         # compute goals
         target_location = self._compute_target_location(vehicle_transform)
@@ -115,29 +164,29 @@ class RRTStarPlanningOperator(Op):
                                         obstacle_map)
 
         # convert to waypoints if path found, else use default waypoints
-        if cost is not None:
-            path_transforms = []
-            for point in path:
-                p_loc = self._carla_map.get_waypoint(
-                    carla.Location(x=point[0], y=point[1], z=0),
-                    project_to_road=True,
-                ).transform.location  # project to road to approximate Z
-                path_transforms.append(
-                    Transform(
-                        location=Location(x=point[0], y=point[1], z=p_loc.z),
-                        rotation=Rotation(),
-                    )
+        # if cost is not None:
+        path_transforms = []
+        for point in path:
+            p_loc = self._carla_map.get_waypoint(
+                carla.Location(x=point[0], y=point[1], z=0),
+                project_to_road=True,
+            ).transform.location  # project to road to approximate Z
+            path_transforms.append(
+                Transform(
+                    location=Location(x=point[0], y=point[1], z=p_loc.z),
+                    rotation=Rotation(),
                 )
-            waypoints = deque(path_transforms)
-            waypoints.extend(
-                itertools.islice(
-                    self._waypoints,
-                    self._wp_index,
-                    len(self._waypoints)
-                )
-            )  # add the remaining global route for future
-        else:
-            waypoints = self._waypoints
+            )
+        waypoints = deque(path_transforms)
+        waypoints.extend(
+            itertools.islice(
+                self._waypoints,
+                self._wp_index,
+                len(self._waypoints)
+            )
+        )  # add the remaining global route for future
+        # else:
+        #     waypoints = self._waypoints
 
         # construct waypoints message
         waypoints = collections.deque(
@@ -161,7 +210,7 @@ class RRTStarPlanningOperator(Op):
         self.get_output_stream('waypoints').send(
             WatermarkMessage(msg.timestamp))
 
-    def _build_obstacle_map(self, vehicle_transform):
+    def _build_obstacle_map(self, vehicle_transform, prediction_msg):
         """
         Construct an obstacle map given vehicle_transform.
 
@@ -175,7 +224,6 @@ class RRTStarPlanningOperator(Op):
             vehicle are considered to save computation cost
         """
         obstacle_map = {}
-        prediction_msg = self._prediction_msgs.popleft()
         # look over all predictions
         for prediction in prediction_msg.predictions:
             time = 0
@@ -219,10 +267,10 @@ class RRTStarPlanningOperator(Op):
             target location
         """
         ego_location = vehicle_transform.location.as_carla_location()
-        self._waypoints = self._hd_map.compute_waypoints(
-            ego_location,
-            self._goal_location
-        )
+        # self._waypoints = self._hd_map.compute_waypoints(
+        #     ego_location,
+        #     self._goal_location
+        # )
         target_waypoint = self._waypoints[self._wp_index]
         target_location = target_waypoint.location
         return target_location

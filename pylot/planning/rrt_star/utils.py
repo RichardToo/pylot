@@ -33,8 +33,8 @@ def start_target_to_space(start, target, length, width):
     """
     origin = (min(start[0], target[0][0] + length / 2) - length,
               min(start[1], target[0][1] + width / 2) - width)
-    bounds = (max(start[0], target[0][0] + length / 2) - origin[0] + width,
-              max(start[1], target[0][1] + width / 2) - origin[1] + width)
+    bounds = (max(start[0], target[0][0] + length / 2) - origin[0] + 3 * length,
+              max(start[1], target[0][1] + width / 2) - origin[1] + 8 * width)
     return origin, bounds
 
 

@@ -8,7 +8,7 @@ from pylot.planning.rrt_star.utils import *
 
 
 def apply_rrt_star(state_space, starting_state, target_space, obstacle_map,
-                   n_samples=500, granularity=0.5, d_threshold=0.5):
+                   n_samples=2000, granularity=1, d_threshold=2):
     """
     Run RRT* algorithm, described here:
         http://roboticsproceedings.org/rss06/p34.pdf.

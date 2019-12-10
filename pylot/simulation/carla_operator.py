@@ -13,7 +13,7 @@ import pylot.utils
 from pylot.simulation.carla_utils import extract_data_in_pylot_format,\
     get_weathers, get_world, reset_world, set_synchronous_mode
 import pylot.simulation.messages
-from pylot.simulation.utils import Transform
+from pylot.simulation.utils import Transform, Location, Rotation
 import pylot.simulation.utils
 
 
@@ -249,6 +249,14 @@ class CarlaOperator(Op):
         # Construct a batch message that spawns the vehicles.
         batch = []
         for transform in spawn_points[:num_vehicles]:
+            self._logger.info(transform)
+            ### HACK SPAWN POINT
+            transform = carla.Transform(
+                location=carla.Location(x=302.058929443, y=326.935546875,
+                                  z=1),
+                rotation=carla.Rotation(yaw=180)
+            )
+            ### HACK SPAWN POINT
             blueprint = random.choice(v_blueprints)
 
             # Change the color of the vehicle.
@@ -258,12 +266,11 @@ class CarlaOperator(Op):
                 blueprint.set_attribute('color', color)
 
             # Let the vehicle drive itself.
-            blueprint.set_attribute('role_name', 'autopilot')
+            # blueprint.set_attribute('role_name', 'autopilot')
 
             batch.append(
-                carla.command.SpawnActor(blueprint, transform).then(
-                    carla.command.SetAutopilot(carla.command.FutureActor,
-                                               True)))
+                carla.command.SpawnActor(blueprint, transform)
+            )
 
         # Apply the batch and retrieve the identifiers.
         vehicle_ids = []
@@ -301,6 +308,13 @@ class CarlaOperator(Op):
                     'Spawn point index is too big. ' \
                     'Town does not have sufficient spawn points.'
                 start_pose = spawn_points[self._flags.carla_spawn_point_index]
+
+                ### HACK SPAWN POINT
+                start_pose = carla.Transform(
+                    location=carla.Location(x=320.058929443, y=326.935546875, z=1),
+                    rotation=carla.Rotation(yaw=180)
+                )
+                ### HACK SPAWN POINT
 
             driving_vehicle = self._world.try_spawn_actor(v_blueprint,
                                                           start_pose)
