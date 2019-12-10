@@ -486,25 +486,20 @@ class Transform(object):
             self.matrix = matrix
             self.location = Location(matrix[0, 3], matrix[1, 3], matrix[2, 3])
 
-            # Forward vector is retrieved from the matrix.
-            self.forward_vector = Vector3D(self.matrix[0, 0],
-                                           self.matrix[1, 0],
-                                           self.matrix[2, 0])
-            pitch_r = math.asin(self.forward_vector.z)
-            yaw_r = math.acos(self.forward_vector.x / math.cos(pitch_r))
-            roll_r = math.asin(matrix[2, 1] / (-1 * math.cos(pitch_r)))
-            self.rotation = Rotation(math.degrees(pitch_r),
-                                     math.degrees(yaw_r), math.degrees(roll_r))
+            # No forward vector provided, we multiply the default world
+            # forward vector by the transform matrix to compute.
+            orientation_matrix = np.dot(
+                Transform._create_matrix(Location(1.0, 0, 0),
+                                         Rotation(0, 0, 0)), self.matrix)
+            self.forward_vector = Vector3D(orientation_matrix[0, 3],
+                                           orientation_matrix[1, 3],
+                                           orientation_matrix[2, 3])
+            self.rotation = None
         else:
             self.location, self.rotation = location, rotation
+            self.forward_vector = forward_vector
             self.matrix = Transform._create_matrix(self.location,
                                                    self.rotation)
-
-            # Forward vector is retrieved from the matrix.
-            self.forward_vector = Vector3D(self.matrix[0, 0],
-                                           self.matrix[1, 0],
-                                           self.matrix[2, 0])
-
     @staticmethod
     def _create_matrix(location, rotation):
         """ Creates a transformation matrix to convert points in the 3D world
