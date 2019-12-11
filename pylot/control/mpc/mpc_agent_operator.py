@@ -229,7 +229,7 @@ class MPCAgentOperator(Op):
             yaws.append(yaw)
             ks.append(k)
             ss.append(s)
-            vels.append(20)
+            vels.append(30)
 
         self._config["reference"] = {
             't_list': [],  # Time [s]

@@ -1,5 +1,5 @@
-from collections import deque
-
+from collections import deque, defaultdict
+import numpy as np
 import carla
 
 from erdos.op import Op
@@ -11,6 +11,8 @@ from pylot.planning.messages import WaypointsMessage
 from pylot.planning.utils import get_distance,\
     get_waypoint_vector_and_angle, BehaviorPlannerState
 from pylot.simulation.carla_utils import get_map
+from pylot.simulation.utils import Transform, Location, Rotation
+
 import pylot.utils
 
 WAYPOINT_COMPLETION_THRESHOLD = 0.9
@@ -47,7 +49,7 @@ class PlanningOperator(Op):
         self._waypoints = deque()
         # The operator picks the wp_num_steer-th waypoint to compute the angle
         # it has to steer by when taking a turn.
-        self._wp_num_steer = 9  # use 9th waypoint for steering
+        self._wp_num_steer = 1  # use 9th waypoint for steering
         # The operator picks the wp_num_speed-th waypoint to compute the angle
         # it has to steer by when driving straight.
         self._wp_num_speed = 4  # use 4th waypoint for speed
@@ -121,8 +123,8 @@ class PlanningOperator(Op):
             self._goal_location = goal_loc.as_carla_location()
         assert self._goal_location, 'Planner does not have a goal'
         self._waypoints = deque()
-        for waypoint_option in msg.data:
-            self._waypoints.append(waypoint_option[0])
+        # for waypoint_option in msg.data:
+        #     self._waypoints.append(waypoint_option[0])
 
     def on_can_bus_update(self, msg):
         self._vehicle_transform = msg.data.transform
@@ -135,7 +137,8 @@ class PlanningOperator(Op):
         wp_speed_vector, wp_speed_angle = get_waypoint_vector_and_angle(
             next_waypoint_speed, self._vehicle_transform)
 
-        target_speed = self.__get_target_speed(next_waypoint_steer)
+        # target_speed = self.__get_target_speed(next_waypoint_steer)
+        target_speed = 60
 
         output_msg = WaypointsMessage(
             msg.timestamp,
@@ -167,7 +170,7 @@ class PlanningOperator(Op):
             (wp_steer, wp_speed): The waypoints to be used to compute steer and
             speed angles.
         """
-        if self._recompute_waypoints:
+        if not self._waypoints:
             ego_location = self._vehicle_transform.location.as_carla_location()
             self._waypoints = self._map.compute_waypoints(
                 ego_location, self._goal_location)
@@ -177,9 +180,34 @@ class PlanningOperator(Op):
             # to current vehicle location.
             self._waypoints = deque([self._vehicle_transform])
 
+        hack = defaultdict(float)
+
+        def sigmoid(x):
+            return 1 / (1 + np.exp(-x))
+
+        for i, x in enumerate(range(-5, 6)):
+            hack[i + 280] = sigmoid(-x)
+        for i, x in enumerate(range(-5, 5)):
+            hack[i + 270] += sigmoid(x)
+
+        new_wps = []
+        for wp in self._waypoints:
+            x = wp.location.x
+            y = wp.location.y
+            new_wp = Transform(
+                location=Location(
+                    x=x,
+                    y=y + 4 * hack[int(x)],
+                    z=0
+                ),
+                rotation=Rotation()
+            )
+            new_wps.append(new_wp)
+        waypoints = new_wps
+
         return (
-            self._waypoints[min(len(self._waypoints) - 1, self._wp_num_steer)],
-            self._waypoints[min(len(self._waypoints) - 1, self._wp_num_speed)])
+            waypoints[min(len(self._waypoints) - 1, self._wp_num_steer)],
+            waypoints[min(len(self._waypoints) - 1, self._wp_num_speed)])
 
     def __remove_completed_waypoints(self):
         """ Removes waypoints that the ego vehicle has already completed.
@@ -208,7 +236,7 @@ class PlanningOperator(Op):
             min_index -= 1
 
         # The closest waypoint is almost complete, remove it.
-        if min_dist < WAYPOINT_COMPLETION_THRESHOLD:
+        if min_dist < 5:
             self._waypoints.popleft()
 
     def best_transition(self, vehicle_transform, predictions):

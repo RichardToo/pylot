@@ -188,7 +188,7 @@ class GroundAgentOperator(Op):
     def get_control_message(self, wp_angle, wp_angle_speed, speed_factor,
                             current_speed, timestamp):
         current_speed = max(current_speed, 0)
-        steer = self._flags.steer_gain * wp_angle
+        steer = 1.2 * wp_angle
         if steer > 0:
             steer = min(steer, 1)
         else:
@@ -199,7 +199,7 @@ class GroundAgentOperator(Op):
             target_speed_adjusted = self._flags.target_speed * speed_factor / 2
         else:
             target_speed_adjusted = self._flags.target_speed * speed_factor
-
+        target_speed_adjusted = 30
         self._pid.target = target_speed_adjusted
         pid_gain = self._pid(feedback=current_speed)
         throttle = min(

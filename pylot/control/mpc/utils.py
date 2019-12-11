@@ -15,7 +15,7 @@ global_config = {
         'min_steer': np.deg2rad(-37.5),
         'max_steer_speed': np.deg2rad(22.5),
         'min_steer_speed': np.deg2rad(-22.5),
-        'max_vel': 20,
+        'max_vel': 30,
         'min_vel': 0,
         'max_accel': 3.0,
         'min_accel': -5.0,
