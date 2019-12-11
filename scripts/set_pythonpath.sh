@@ -10,7 +10,7 @@ if [ -z "$CARLA_HOME" ]; then
 fi
 
 # Get the carla version.
-CARLA_VERSION=$(cat $CARLA_HOME/VERSION)
+CARLA_VERSION=0.9.6
 if [ -z "$CARLA_VERSION" ]; then
     echo "Please set \$CARLA_VERSION before sourcing this script"
     exit 1
