@@ -252,8 +252,7 @@ class CarlaOperator(Op):
             self._logger.info(transform)
             ### HACK SPAWN POINT
             transform = carla.Transform(
-                location=carla.Location(x=302.058929443, y=326.935546875,
-                                  z=1),
+                location=carla.Location(x=280.058929443, y=326.935546875, z=1),
                 rotation=carla.Rotation(yaw=180)
             )
             ### HACK SPAWN POINT
