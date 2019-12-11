@@ -9,6 +9,8 @@ Planner steps:
 4. Construct state_space, target_space, start_state and run RRT*
 5. Construct waypoints message and output on waypoints stream
 """
+import numpy as np
+
 import collections
 import itertools
 import threading
@@ -77,6 +79,7 @@ class RRTStarPlanningOperator(Op):
 
         self._can_bus_msgs = deque()
         self._prediction_msgs = deque()
+        self._ego_id = None
 
         self._lock = threading.Lock()
 
@@ -102,9 +105,21 @@ class RRTStarPlanningOperator(Op):
         # get ego info
         can_bus_msg = self._can_bus_msgs.popleft()
         vehicle_transform = can_bus_msg.data.transform
-
+        prediction_msg = self._prediction_msgs.popleft()
         # get obstacles
-        obstacle_map = self._build_obstacle_map(vehicle_transform)
+        if not self._ego_id:
+            closest_id = None
+            min_dist = np.inf
+            for prediction in prediction_msg.predictions:
+                location = prediction.trajectory[0]
+                if np.linalg.norm([location.x, location.y]) < min_dist:
+                    min_dist = np.linalg.norm([location.x, location.y])
+                    closest_id = prediction.id
+            self._ego_id = closest_id
+        prediction_msg.predictions = [pred for pred in
+                                      prediction_msg.predictions if
+                                      pred.id != self._ego_id]
+        obstacle_map = self._build_obstacle_map(vehicle_transform, prediction_msg)
 
         # compute goals
         target_location = self._compute_target_location(vehicle_transform)
@@ -161,7 +176,7 @@ class RRTStarPlanningOperator(Op):
         self.get_output_stream('waypoints').send(
             WatermarkMessage(msg.timestamp))
 
-    def _build_obstacle_map(self, vehicle_transform):
+    def _build_obstacle_map(self, vehicle_transform, prediction_msg):
         """
         Construct an obstacle map given vehicle_transform.
 
@@ -175,7 +190,6 @@ class RRTStarPlanningOperator(Op):
             vehicle are considered to save computation cost
         """
         obstacle_map = {}
-        prediction_msg = self._prediction_msgs.popleft()
         # look over all predictions
         for prediction in prediction_msg.predictions:
             time = 0

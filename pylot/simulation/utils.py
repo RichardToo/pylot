@@ -6,7 +6,7 @@ import numpy as np
 from numpy.linalg import inv
 from numpy.matlib import repmat
 
-from pylot.perception.detection.utils import DetectedObject,\
+from pylot.perception.detection.utils import DetectedObject, \
     DetectedSpeedLimit, get_bounding_boxes_from_segmented
 from pylot.perception.segmentation.utils import get_traffic_sign_pixels
 
@@ -49,10 +49,10 @@ class CameraSetup(object):
         return self.__str__()
 
     def __str__(self):
-        return 'CameraSetup(name: {}, type: {}, width: {}, height: {}, '\
-            'transform: {}, fov: {}'.format(
-                self.name, self.camera_type, self.width, self.height,
-                self.transform, self.fov)
+        return 'CameraSetup(name: {}, type: {}, width: {}, height: {}, ' \
+               'transform: {}, fov: {}'.format(
+            self.name, self.camera_type, self.width, self.height,
+            self.transform, self.fov)
 
 
 class LidarSetup(object):
@@ -86,12 +86,12 @@ class LidarSetup(object):
         return self.__str__()
 
     def __str__(self):
-        return 'LidarSetup(name: {}, type: {}, transform: {}, range: {}, '\
-            'rotation freq: {}, channels: {}, upper_fov: {}, lower_fov: {}, '\
-            'points_per_second: {}'.format(
-                self.name, self.lidar_type, self.transform, self.range,
-                self.rotation_frequency, self.channels, self.upper_fov,
-                self.lower_fov, self.points_per_second)
+        return 'LidarSetup(name: {}, type: {}, transform: {}, range: {}, ' \
+               'rotation freq: {}, channels: {}, upper_fov: {}, lower_fov: {}, ' \
+               'points_per_second: {}'.format(
+            self.name, self.lidar_type, self.transform, self.range,
+            self.rotation_frequency, self.channels, self.upper_fov,
+            self.lower_fov, self.points_per_second)
 
 
 class IMUSetup(object):
@@ -128,7 +128,6 @@ class CanBus(object):
 class BoundingBox(object):
     """ The Pylot version of the carla.BoundingBox instance that defines helper
     functions needed in Pylot, and makes the class serializable.
-
     Attributes:
         transform: The transform of the bounding box (rotation is (0, 0, 0))
         extent: The extent of the bounding box.
@@ -137,7 +136,6 @@ class BoundingBox(object):
     def __init__(self, carla_bb):
         """ Initializes the BoundingBox instance from the given
         carla.BoundingBox instance.
-
         Args:
             carla_bb: The carla.BoundingBox instance to initialize from.
         """
@@ -150,7 +148,6 @@ class BoundingBox(object):
     def as_carla_bounding_box(self):
         """ Retrieves the current BoundingBox as an instance of
         carla.BoundingBox
-
         Returns:
             A carla.BoundingBox instance that represents the current bounding
             box.
@@ -161,7 +158,6 @@ class BoundingBox(object):
 
     def visualize(self, world, actor_transform, time_between_frames=100):
         """ Visualize the given bounding box on the world.
-
         Args:
             world: The world instance to visualize the bounding box on.
             actor_transform: The current transform of the actor that the
@@ -178,24 +174,19 @@ class BoundingBox(object):
                        intrinsic_matrix):
         """ Converts the coordinates of the bounding box for the given object
         to the coordinates in the view of the camera.
-
         This method retrieves the extent of the bounding box, transforms them
         to coordinates relative to the bounding box origin, then converts those
         to coordinates relative to the object.
-
         These coordinates are then considered to be in the world coordinate
         system, which is mapped into the camera view. A negative z-value
         signifies that the bounding box is behind the camera plane.
-
         Note that this function does not cap the coordinates to be within the
         size of the camera image.
-
         Args:
             object_transform: The transform of the object that the bounding
                 box is associated with.
             extrinsic_matrix: The extrinsic matrix of the camera.
             intrinsic_matrix: The intrinsic matrix of the camera.
-
         Returns:
             A list of 8 Location instances specifying the 8 corners of the
             bounding box.
@@ -243,7 +234,6 @@ class BoundingBox(object):
 
 class Vector3D(object):
     """ Represents a 3D vector and provides useful helper functions.
-
     Attributes:
         x: The value of the first axis.
         y: The value of the second axis.
@@ -253,7 +243,6 @@ class Vector3D(object):
     def __init__(self, x=None, y=None, z=None, carla_vector=None):
         """ Initializes the Vector3D instance from the given x, y and z values.
         Alternatively, pass in a carla_vector (carla.vector3D).
-
         Args:
             x: The value of the first axis.
             y: The value of the second axis.
@@ -295,11 +284,9 @@ class Vector3D(object):
     def to_camera_view(self, extrinsic_matrix, intrinsic_matrix):
         """ Converts the given 3D vector to the view of the camera using
         the extrinsic and the intrinsic matrix.
-
         Args:
             extrinsic_matrix: The extrinsic matrix of the camera.
             intrinsic_matrix: The intrinsic matrix of the camera.
-
         Returns:
             An instance with the coordinates converted to the camera view.
         """
@@ -329,7 +316,6 @@ class Vector3D(object):
 class Rotation(object):
     """ The Pylot version of the carla.Rotation instance that defines helper
     functions needed in Pylot, and makes the class serializable.
-
     Attributes:
         pitch: Rotation about Y-axis.
         yaw:   Rotation about Z-axis.
@@ -339,10 +325,8 @@ class Rotation(object):
     def __init__(self, pitch=0, yaw=0, roll=0, carla_rotation=None):
         """ Initializes the Rotation instance with either the given pitch,
         roll and yaw values or from the carla.Rotation instance, if specified.
-
         The carla.Rotation instance, if provided, takes precedence over the
         pitch, roll, yaw values provided in the constructor.
-
         Args:
             pitch: Rotation about Y-axis.
             yaw:   Rotation about Z-axis.
@@ -361,7 +345,6 @@ class Rotation(object):
 
     def as_carla_rotation(self):
         """ Retrieves the current rotation as an instance of carla.Rotation.
-
         Returns:
             A carla.Rotation instance representing the current rotation.
         """
@@ -378,7 +361,6 @@ class Rotation(object):
 class Location(Vector3D):
     """ The Pylot version of the carla.Location instance that defines helper
     functions needed in Pylot, and makes the class serializable.
-
     Attributes:
         x: The value of the x-axis.
         y: The value of the y-axis.
@@ -388,10 +370,8 @@ class Location(Vector3D):
     def __init__(self, x=0, y=0, z=0, carla_location=None):
         """ Initializes the Location instance with either the given x, y, z
         values or from the carla.Location instance if specified.
-
         The carla.Location instance, if provided, takes precedence over the
         x, y, z values provided in the constructor.
-
         Args:
             x: The value of the x-axis.
             y: The value of the y-axis.
@@ -408,10 +388,8 @@ class Location(Vector3D):
     def distance(self, other):
         """ Calculates the Euclidean distance between the given point and the
         other point.
-
         Args:
             other: The other Location instance to calculate the distance to.
-
         Returns:
             The Euclidean distance between the two points.
         """
@@ -419,7 +397,6 @@ class Location(Vector3D):
 
     def as_carla_location(self):
         """ Retrieves the current location as an instance of carla.Location.
-
         Returns:
             A carla.Location instance representing the current location.
         """
@@ -435,7 +412,6 @@ class Location(Vector3D):
 class Transform(object):
     """ The Pylot version of the carla.Transform instance that defines helper
     functions needed in Pylot, and makes the class serializable.
-
     Attributes:
         location: The location of the object represented by the transform.
         rotation: The rotation of the object represented by the transform.
@@ -457,11 +433,8 @@ class Transform(object):
                  carla_transform=None):
         """ Instantiates a Transform object with either the given location
         and rotation, or using the given matrix.
-
         Rotation is assumed in degrees.
-
         First precedence is for carla_transform and then for matrix.
-
         Args:
             location: The location of the object represented by the transform.
             rotation: The rotation of the object represented by the transform.
@@ -486,33 +459,27 @@ class Transform(object):
             self.matrix = matrix
             self.location = Location(matrix[0, 3], matrix[1, 3], matrix[2, 3])
 
-            # Forward vector is retrieved from the matrix.
-            self.forward_vector = Vector3D(self.matrix[0, 0],
-                                           self.matrix[1, 0],
-                                           self.matrix[2, 0])
-            pitch_r = math.asin(self.forward_vector.z)
-            yaw_r = math.acos(self.forward_vector.x / math.cos(pitch_r))
-            roll_r = math.asin(matrix[2, 1] / (-1 * math.cos(pitch_r)))
-            self.rotation = Rotation(math.degrees(pitch_r),
-                                     math.degrees(yaw_r), math.degrees(roll_r))
+            # No forward vector provided, we multiply the default world
+            # forward vector by the transform matrix to compute.
+            orientation_matrix = np.dot(
+                Transform._create_matrix(Location(1.0, 0, 0),
+                                         Rotation(0, 0, 0)), self.matrix)
+            self.forward_vector = Vector3D(orientation_matrix[0, 3],
+                                           orientation_matrix[1, 3],
+                                           orientation_matrix[2, 3])
+            self.rotation = None
         else:
             self.location, self.rotation = location, rotation
+            self.forward_vector = forward_vector
             self.matrix = Transform._create_matrix(self.location,
                                                    self.rotation)
-
-            # Forward vector is retrieved from the matrix.
-            self.forward_vector = Vector3D(self.matrix[0, 0],
-                                           self.matrix[1, 0],
-                                           self.matrix[2, 0])
 
     @staticmethod
     def _create_matrix(location, rotation):
         """ Creates a transformation matrix to convert points in the 3D world
         coordinate space with respect to the object.
-
         Use the transform_points function to transpose a given set of points
         with respect to the object.
-
         Args:
             location: The location of the object represented by the transform.
             rotation: The rotation of the object represented by the transform.
@@ -543,13 +510,10 @@ class Transform(object):
     def transform_points(self, points):
         """ Transforms a given set of points in the 3D world coordinate space
         with respect to the object represented by the transform.
-
         Expected point format:
             List of Location values.
-
         Args:
             points: Points in the format [Location,..Location]
-
         Returns:
             Transformed points in the format [Location,..Location]
         """
@@ -578,7 +542,6 @@ class Transform(object):
 
     def as_carla_transform(self):
         """ Convert the transform to a carla.Transform instance.
-
         Returns:
             A carla.Transform instance representing the current Transform.
         """
@@ -630,15 +593,13 @@ def labels_to_array(image):
 
 def get_speed(velocity_vector):
     """ Compute the speed of the vehicle in m/s.
-
     Args:
         vehicle: A velocity vector.
-
     Returns:
         The speed of the given vehicle as a float in m/s.
     """
-    speed = math.sqrt(velocity_vector.x**2 + velocity_vector.y**2 +
-                      velocity_vector.z**2)
+    speed = math.sqrt(velocity_vector.x ** 2 + velocity_vector.y ** 2 +
+                      velocity_vector.z ** 2)
     return speed
 
 
@@ -656,7 +617,6 @@ def depth_to_local_point_cloud(depth_frame, width, height, fov, max_depth=0.9):
     Convert a CARLA-encoded depth-map to a 2D array containing
     the 3D position (relative to the camera) of each pixel.
     "max_depth" is used to omit the points that are far enough.
-
     Args:
         depth_frame: the normalized depth frame
         width: frame width
@@ -739,7 +699,6 @@ def lidar_to_camera_transform(transform):
 def get_3d_world_position_with_depth_map(
         x, y, depth_frame, width, height, fov, camera_transform):
     """ Gets the 3D world position from pixel coordinates using a depth frame.
-
         Args:
             x: Pixel x coordinate.
             y: Pixel y coordinate.
@@ -748,7 +707,6 @@ def get_3d_world_position_with_depth_map(
             height: frame height
             fov: camera field of view
             camera_transform: Camera transform relative to the world.
-
        Returns:
             3D world location.
     """
@@ -764,7 +722,6 @@ def get_3d_world_position_with_depth_map(
 def batch_get_3d_world_position_with_depth_map(
         xs, ys, depth_frame, width, height, fov, camera_transform):
     """ Gets the 3D world positions from pixel coordinates using a depth frame.
-
         Args:
             xs: List of pixel x coordinate.
             ys: List of pixel y coordinate.
@@ -773,7 +730,6 @@ def batch_get_3d_world_position_with_depth_map(
             height: frame height
             fov: camera field of view
             camera_transform: Camera transform relative to the world.
-
        Returns:
             List of 3D world locations.
     """
@@ -801,7 +757,7 @@ def find_point_depth(x, y, point_cloud):
     normalized_pc = pc_xy / pc_z[:, None]
     xy = np.array([x, y]).transpose()
     # Compute distance
-    dist = np.sum((normalized_pc - xy)**2, axis=1)
+    dist = np.sum((normalized_pc - xy) ** 2, axis=1)
     # Select index of the closest point.
     closest_index = np.argmin(dist)
     # Return the closest point.
@@ -821,12 +777,10 @@ def lidar_point_cloud_to_camera_coordinates(point_cloud):
     return [[loc.x, loc.y, loc.z] for loc in transformed_points]
 
 
-
 def get_3d_world_position_with_point_cloud(
         u, v, pc, camera_transform, width, height, fov):
     """ Gets the 3D world position from pixel coordiantes using a Lidar
         point cloud.
-
         Args:
             u: Pixel x coordinate.
             v: Pixel y coordinate.
@@ -858,15 +812,12 @@ def get_3d_world_position_with_point_cloud(
 
 def get_depth(vehicle_transform, obj_transform):
     """ Retrieves the depth of the object in front of the vehicle.
-
     This function aims to provide an estimate of the depth returned by the
     depth camera sensor of the given object.
-
     Args:
         vehicle_transform: The transform of the ego vehicle in world
             coordinates.
         obj_transform: The transform of the object in the world coordinates.
-
     Returns:
         The depth of the object.
     """
@@ -886,13 +837,11 @@ def get_depth(vehicle_transform, obj_transform):
 def get_bounding_box_in_camera_view(bb_coordinates, image_width, image_height):
     """ Creates the bounding box in the view of the camera image using the
     coordinates generated with respect to the camera transform.
-
     Args:
         bb_coordinates: The coordinates of the bounding box relative to the
             camera transform.
         image_width: The width of the image being published by the camera.
         image_height: The height of the image being published by the camera.
-
     Returns:
         None, if the bounding box does not fall into the view of the camera.
         (x1, x2, y1, y2) otherwise, which depict the bottom left and the top
@@ -917,11 +866,11 @@ def get_bounding_box_in_camera_view(bb_coordinates, image_width, image_height):
         # If the points are themselves within the image, add them to the
         # set of thresholded points.
         if p1[0] >= 0 and p1[0] < image_width and p1[1] >= 0 and p1[
-                1] < image_height:
+            1] < image_height:
             points.append(p1)
 
         if p2[0] >= 0 and p2[0] < image_width and p2[1] >= 0 and p2[
-                1] < image_height:
+            1] < image_height:
             points.append(p2)
 
         # Compute the intersection of the line segment formed by p1 -- p2
@@ -983,7 +932,6 @@ def get_2d_bbox_from_3d_box(vehicle_transform,
                             max_depth=125):
     """ Retrieves the 2D bounding box with respect to the camera view from the
     given 3D bounding box.
-
     Args:
         vehicle_transform: The transform in world coordinates of the ego
             vehicle.
@@ -1053,7 +1001,6 @@ def get_2d_bbox_from_3d_box(vehicle_transform,
 def transform_traffic_light_bboxes(light, points):
     """ Transforms the bounding box specified in the points relative to the
     light.
-
     Args:
         light: TrafficLight object representing the light.
         points: An array of length 4 representing the 4 points of the
@@ -1133,7 +1080,7 @@ def get_traffic_lights_bbox_state(camera_transform, traffic_lights, town_name):
     elif town_name == 'Town03':
         for light in traffic_lights:
             if light.trigger_volume_extent.x > 2 or light.id in [
-                    66, 67, 68, 71, 72, 73, 75, 81,
+                66, 67, 68, 71, 72, 73, 75, 81,
             ]:
                 points = [
                     # Back Plane
@@ -1355,7 +1302,6 @@ def get_speed_limit_det_objs(
         speed_signs, vehicle_transform, camera_transform, depth_frame,
         frame_width, frame_height, fov, segmented_frame):
     """ Get the speed limit signs that are withing the camera frame.
-
     Args:
         speed_signs: List of speed limit signs in the world.
         vehicle_transform: Ego-vehicle transform in world coordinates.
@@ -1389,8 +1335,8 @@ def _match_bboxes_with_speed_signs(vehicle_transform, pos_bboxes, speed_signs):
         best_ts = None
         best_dist = 1000000
         for ts in speed_signs:
-            dist = ((pos.x - ts.transform.location.x)**2 +
-                    (pos.y - ts.transform.location.y)**2)
+            dist = ((pos.x - ts.transform.location.x) ** 2 +
+                    (pos.y - ts.transform.location.y) ** 2)
             if (dist < best_dist):
                 best_dist = dist
                 best_ts = ts
@@ -1430,7 +1376,7 @@ def _get_stop_markings_bbox(
         loc_view = loc.to_camera_view(camera_transform.matrix,
                                       camera_intrinsic)
         if (loc_view.z >= 0 and loc_view.x >= 0 and loc_view.y >= 0 and
-            loc_view.x < frame_width and loc_view.y < frame_height):
+                loc_view.x < frame_width and loc_view.y < frame_height):
             coords.append(loc_view)
     if len(coords) == 4:
         xmin = min(coords[0].x, coords[1].x, coords[2].x, coords[3].x)
@@ -1440,11 +1386,11 @@ def _get_stop_markings_bbox(
         # Check if the bbox is not obstructed and if it's sufficiently
         # big for the text to be readable.
         if (ymax - ymin > 15 and
-            have_same_depth(int(coords[0].x),
-                            int(coords[0].y),
-                            coords[0].z,
-                            depth_frame,
-                            0.4)):
+                have_same_depth(int(coords[0].x),
+                                int(coords[0].y),
+                                coords[0].z,
+                                depth_frame,
+                                0.4)):
             return (int(xmin), int(xmax), int(ymin), int(ymax))
     return None
 
@@ -1462,12 +1408,10 @@ def get_traffic_stop_det_objs(
         frame_height,
         fov):
     """ Get traffic stop lane markings that are withing the camera frame.
-
     Args:
         traffic_stops: List of traffic stop actors in the world.
         camera_transform: Camera transform in world coordinates.
         fov: Camera field of view.
-
     Returns:
         List of DetectedObjects.
     """
@@ -1485,7 +1429,6 @@ def get_traffic_stop_det_objs(
 class TrafficLight(object):
     """ The Pylot version of a carla TrafficLight that defines helper
     functions needed in Pylot, and makes the class serializable.
-
     Args:
         id: The identifier of the TrafficLight.
         transform: The transform of the TrafficLight.
@@ -1496,7 +1439,6 @@ class TrafficLight(object):
     def __init__(self, traffic_light):
         """ Initializes the TrafficLight instance with the given carla
         TrafficLight instance.
-
         Args:
             traffic_light: The carla.TrafficLight instance to initialize this
                 instance with.
